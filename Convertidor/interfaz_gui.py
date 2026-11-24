@@ -8,6 +8,7 @@ from motor_automatas import (
     determinar_afn_a_afd,
     eliminar_epsilon_transiciones,
     evaluar_cadena_afd,
+    generar_sugerencias_cadenas,
     mostrar_estado_afd,
     validar_definicion_automata,
 )
@@ -355,6 +356,23 @@ class AplicacionAFD(tk.Tk):
             res_afd["encabezados"],
             res_afd["filas"],
         )
+
+        sugeridas_dinamicas = generar_sugerencias_cadenas(
+            alfabeto=alfabeto,
+            estados_afd=res_afd["estados_afd"],
+            transiciones_afd=res_afd["transiciones_afd"],
+            estado_inicial_afd=res_afd["estado_inicial_afd"],
+            estados_finales_afd=res_afd["estados_finales_afd"],
+            simbolo_vacio=self.simbolo_vacio,
+        )
+        if sugeridas_dinamicas:
+            self.lbl_sugeridas.config(
+                text=f"Cadenas sugeridas (auto): {', '.join(sugeridas_dinamicas)}"
+            )
+        else:
+            self.lbl_sugeridas.config(
+                text="Cadenas sugeridas: (no se pudieron generar automáticamente)"
+            )
 
         self.datos_afd = res_afd
         self.alfabeto_actual = alfabeto

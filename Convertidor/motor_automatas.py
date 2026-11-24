@@ -187,3 +187,72 @@ def evaluar_cadena_afd(cadena, estado_inicial_afd, estados_finales_afd, transici
 
 def formatear_tabla_texto(filas, encabezados):
     return tabulate(filas, headers=encabezados, tablefmt="grid")
+
+from collections import deque
+
+
+def generar_sugerencias_cadenas(
+    alfabeto,
+    estados_afd,
+    transiciones_afd,
+    estado_inicial_afd,
+    estados_finales_afd,
+    simbolo_vacio="e",
+    max_aceptadas=3,
+    max_rechazadas=3,
+):
+    """
+    Genera cadenas sugeridas (aceptadas, rechazadas y fuera de alfabeto)
+    recorriendo el AFD resultante mediante BFS.
+    """
+    if not alfabeto or not estados_afd:
+        return []
+
+    aceptadas = []
+    rechazadas = []
+    visitados = set()
+    cola = deque([(estado_inicial_afd, "")])
+
+    # Limite de exploracion para evitar bucles largos en automatas grandes
+    max_nodos = 250
+    explorados = 0
+
+    while cola and explorados < max_nodos and (len(aceptadas) < max_aceptadas or len(rechazadas) < max_rechazadas):
+        actual, cadena = cola.popleft()
+        explorados += 1
+
+        if cadena == "" and actual in estados_finales_afd:
+            if simbolo_vacio not in aceptadas and len(aceptadas) < max_aceptadas:
+                aceptadas.append(simbolo_vacio)
+        elif cadena != "":
+            if actual in estados_finales_afd:
+                if cadena not in aceptadas and len(aceptadas) < max_aceptadas:
+                    aceptadas.append(cadena)
+            else:
+                if cadena not in rechazadas and len(rechazadas) < max_rechazadas:
+                    rechazadas.append(cadena)
+
+        if len(cadena) >= 6:
+            continue
+
+        for simbolo in alfabeto:
+            siguiente = transiciones_afd.get((actual, simbolo), ())
+            nueva_cadena = cadena + simbolo
+            estado_clave = (siguiente, nueva_cadena)
+            if estado_clave not in visitados:
+                visitados.add(estado_clave)
+                cola.append((siguiente, nueva_cadena))
+
+    # Agregar un ejemplo con simbolo fuera del alfabeto para probar validacion
+    candidatos_fuera = ["x", "z", "9", "?"]
+    fuera_alfabeto = next((c for c in candidatos_fuera if c not in alfabeto), None)
+    base_simbolo = alfabeto[0]
+    ejemplo_invalido = f"{base_simbolo}{fuera_alfabeto}" if fuera_alfabeto else None
+
+    sugerencias = []
+    sugerencias.extend(aceptadas)
+    sugerencias.extend(rechazadas)
+    if ejemplo_invalido and ejemplo_invalido not in sugerencias:
+        sugerencias.append(ejemplo_invalido)
+
+    return sugerencias
